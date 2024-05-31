@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Quiz Probability Calculator</title>
+    <link rel="stylesheet" href="httd>
+    ps://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            animation: fadeInUp 1s ease; /* Animate container on page load */
+        }
+
+        /* Animate container fade in */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            transition: border-color 0.3s ease; /* Add transition effect to input fields */
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            border-color: #007bff; /* Change border color on focus */
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease; /* Add transition effect to button */
+        }
+
+        button:hover {
+            background-color: #0056b3; /* Change button color on hover */
+            transform: scale(1.05); /* Add scale effect on hover */
+        }
+
+        p {
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        canvas {
+            margin-top: 20px;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #007bff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto; /* Center spinner */
+            display: none; /* Hide spinner by default */
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" data-aos="fade-up"> <!-- Add AOS animation to container -->
+        <h1 class="animate__animated animate__bounce">English Quiz Probability Calculator</h1> <!-- Animate heading with Animate.css -->
+        <p>Enter the number of school days since your last English quiz:</p>
+        <input type="number" id="daysInput" min="0" placeholder="Number of days">
+        <p>What day is it today?</p>
+        <select id="dayOfWeek">
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+        </select>
+        <p>Did the teacher hint at a quiz this week?</p>
+        <select id="quizHint">
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+        </select>
+        <button onclick="calculateProbability()">Calculate Probability</button>
+        <p id="probabilityResult"></p>
+        <div id="calendar"></div>
+        <canvas id="probabilityChart" width="400" height="200"></canvas>
+        <div class="spinner"></div> <!-- Loading spinner -->
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.0/main.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script>
+        var myChart; // Define chart variable globally
+
+        function calculateProbability() {
+            var days = parseInt(document.getElementById('daysInput').value);
+            var dayOfWeek = document.getElementById('dayOfWeek').value;
+            var quizHint = document.getElementById('quizHint').value;
+            var baseProbability = 25; // Base probability of having a quiz
+            var probability;
+
+            if (isNaN(days) || days < 0) {
+                alert("Please enter a valid number of days.");
+                return;
+            }
+
+            // Adjust probability based on the number of days since last quiz
+            if (days <= 0) {
+                probability = baseProbability; // Base probability on the first day after a quiz
+            } else if (days < 4) {
+                probability = baseProbability + (days * 10); // Increase by 10% per day until 75%
+            } else {
+                probability = 75 + ((days - 3) * 5); // Increase by 5% per day after reaching 75%
+            }
+
+            // Adjust probability based on the day of the week and quiz hint
+            if (quizHint === 'yes') {
+                switch (dayOfWeek) {
+                    case 'Monday':
+                        probability += 20; // Higher probability on Mondays with hint
+                        break;
+                    case 'Tuesday':
+                        probability += 15; // Adjusted probability on Tuesdays with hint
+                        break;
+                    case 'Wednesday':
+                        probability += 10; // Adjusted probability on Wednesdays with hint
+                        break;
+                    case 'Thursday':
+                        probability += 5; // Adjusted probability on Thursdays with hint
+                        break;
+                    case 'Friday':
+                        probability = 100; // Friday probability is 100% if there's a hint
+                        break;
+                }
+            }
+
+            // Limit probability to 100%
+            probability = Math.min(probability, 100);
+
+            document.getElementById('probabilityResult').innerText = `Probability of having an English quiz: ${probability}%`;
+
+            // Update or create the chart
+            updateChart(probability);
+
+            // Display probability on the calendar
+            displayProbabilityOnCalendar(days, probability);
+
+            // Show loading spinner while calculating probability
+            document.querySelector('.spinner').style.display = 'block';
+            setTimeout(function() {
+                document.querySelector('.spinner').style.display = 'none';
+            }, 1000); // Hide spinner after 1 second (simulating delay)
+        }
+
+        function updateChart(probability) {
+            if (myChart) {
+                myChart.destroy(); // Destroy previous chart instance if it exists
+            }
+
+            var ctx = document.getElementById('probabilityChart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], // Only show weekdays
+                    datasets: [{
+                        label: 'Probability',
+                        data: [45, 50, 55, 60, 65], // Adjusted probabilities
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayProbabilityOnCalendar(days, probability) {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                events: [{
+                    title: `Probability: ${probability}%`,
+                    start: moment().add(days, 'days').format('YYYY-MM-DD'), // Set the start date as today plus the number of days
+                    allDay: true
+                }]
+            });
+            calendar.render();
+        }
+
+        // Initialize AOS
+        AOS.init();
+    </script>
+</body>
+</html>
